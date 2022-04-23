@@ -36,3 +36,21 @@
     transform: rotate(360deg);
   }
 }
+
+textarea {
+  resize: none;
+  font-size: 24px;
+  font-family: "Lucida Console", "Courier New", monospace;
+  font-weight: bold;
+  text-align: center;
+
+  background-color: #4d555f;
+
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  color: #ffffff;
+
+  box-shadow: inset 0 -3em 3em rgba(0, 0, 0, 0.1),
+    0.3em 0.3em 1em rgba(0, 0, 0, 0.3);
+}
