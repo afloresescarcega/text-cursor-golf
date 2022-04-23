@@ -8,6 +8,6 @@ services:
       context: ./frontend
       target: development
     volumes:
-      - ./frontend/src:/src
+      - ./frontend/src:/frontend/src
     ports:
       - "3000:3000"
