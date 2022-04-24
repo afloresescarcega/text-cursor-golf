@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  frontend:
+    container_name: text-cursor-golf
+    image: text-cursor-golf
+    build:
+      context: ./frontend
+      target: development
+    volumes:
+      - ./frontend/src:/frontend/src
+    ports:
+      - "3000:3000"
