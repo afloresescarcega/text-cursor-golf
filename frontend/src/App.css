@@ -13,6 +13,12 @@
   color: white;
 }
 
+#textboxes {
+  display: flex;
+  flex-flow: column wrap;
+  justify-content: space-between;
+}
+
 textarea {
   resize: none;
   font-size: 24px;
