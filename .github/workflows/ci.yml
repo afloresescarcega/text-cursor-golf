@@ -8,20 +8,21 @@ on:
 
   workflow_dispatch:
 
+defaults:
+  run:
+    working-directory: ./frontend
+
 jobs:
   build-frontend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v2
       - uses: borales/actions-yarn@v2.3.0
         with:
-          cmd: install # will run `yarn install` command
+          run: yarn install # will run `yarn install` command
       - uses: borales/actions-yarn@v2.3.0
         with:
-          cmd: build # will run `yarn build` command
+          run: yarn build # will run `yarn build` command
       - uses: borales/actions-yarn@v2.3.0
         with:
-          cmd: test # will run `yarn test` command
+          run: yarn test # will run `yarn test` command
