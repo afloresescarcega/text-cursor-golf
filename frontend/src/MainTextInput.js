@@ -24,29 +24,39 @@ export class MainTextInput extends Component {
     this.handleChange = this.handleChange.bind(this);
     this.handleKeyPress = this.handleKeyPress.bind(this);
     this.mainTextInput = createRef();
+    this.keyDisplayInput = createRef();
   }
 
   componentDidMount() {
     console.debug("finished mounting");
-    this.mainTextInput.current.style.backgroundColor = "red";
-    this.mainTextInput.current.addEventListener("click", (e) => {e.stopPropagation();
-      e.preventDefault(); this.mainTextInput.current.focus()}, true);
+    this.setBackgroundColor("red");
+    this.mainTextInput.current.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      this.mainTextInput.current.focus();
+    }, true);
   }
 
   componentWillUnmount() {
     console.debug("finished unmounting");
   }
 
+  setBackgroundColor(color) {
+    this.mainTextInput.current.style.backgroundColor = color;
+  }
+
   handleChange(event) {
     this.setState({ value: event.target.value });
+
     if (event.target.value === this.state.goal) {
       console.debug("You win!");
-      if (getRecordFromCookie() == null || this.state.keyPressCount < getRecordFromCookie()) {
+      const record = getRecordFromCookie();
+      if (record === null || this.state.keyPressCount < parseInt(record, 10)) {
         document.cookie = "record=" + this.state.keyPressCount;
       }
-      this.mainTextInput.current.style.backgroundColor = "green";
+      this.setBackgroundColor("green");
     } else {
-      this.mainTextInput.current.style.backgroundColor = "red";
+      this.setBackgroundColor("red");
       console.debug("Keep going!");
     }
   }
@@ -56,76 +66,62 @@ export class MainTextInput extends Component {
       keyPressCount: prevState.keyPressCount + 1,
     }));
 
+    let displayChar;
     switch (event.code) {
       case "ArrowLeft":
-        this.state.keyDisplay.push("←");
-        console.log("Left arrow key pressed");
+        displayChar = "←";
         break;
       case "ArrowRight":
-        this.state.keyDisplay.push("→");
-        console.log("Right arrow key pressed");
+        displayChar = "→";
         break;
       case "ArrowUp":
-        this.state.keyDisplay.push("↑");
-        console.log("Up arrow key pressed");
+        displayChar = "↑";
         break;
       case "ArrowDown":
-        this.state.keyDisplay.push("↓");
-        console.log("Down arrow key pressed");
+        displayChar = "↓";
         break;
       case "MetaLeft":
-        this.state.keyDisplay.push("⌘");
-        console.log("Command/Windows key pressed");
+        displayChar = "⌘";
         break;
       case "ControlLeft":
-        this.state.keyDisplay.push("Ctrl");
-        console.log("Control key pressed");
+        displayChar = "Ctrl";
         break;
       case "AltLeft":
-        this.state.keyDisplay.push("Alt");
-        console.log("Option/Alt key pressed");
+        displayChar = "Alt";
         break;
       case "ShiftLeft":
-        this.state.keyDisplay.push("Shift");
-        console.log("Shift key pressed");
-        break;
       case "ShiftRight":
-        this.state.keyDisplay.push("Shift");
-        console.log("Shift key pressed");
+        displayChar = "Shift";
         break;
       case "Space":
-        this.state.keyDisplay.push("⎵");
-        console.log("Space key pressed");
+        displayChar = "⎵";
         break;
       case "Backspace":
-        this.state.keyDisplay.push("⌫");
-        console.log("Backspace key pressed");
+        displayChar = "⌫";
         break;
       default:
-        this.state.keyDisplay.push(event.code.replace("Key", ""));
-        console.debug(`You pressed a key: ${event.code.replace("Key", "")}`);
+        displayChar = event.code.replace("Key", "");
         break;
     }
+
+    this.setState((prevState) => ({
+      keyDisplay: [...prevState.keyDisplay, displayChar],
+    }));
+
+    console.debug(`You pressed a key: ${displayChar}`);
   }
 
   render() {
-    let previousRecord;
-    if (getRecordFromCookie()) {
-      previousRecord = (
-        <p>Previous record: {getRecordFromCookie()} keystrokes</p>
-      );
-    }
+    const previousRecord = getRecordFromCookie();
+    const previousRecordElement = previousRecord ? (
+      <p>Previous record: {previousRecord} keystrokes</p>
+    ) : null;
+
     return (
       <div id="textboxes">
-        {previousRecord}
+        {previousRecordElement}
         <p>Goal: "{this.state.goal}"</p>
-        <textarea
-          id="counter"
-          rows="1"
-          cols="3"
-          value={this.state.keyPressCount}
-          onChange={this.handleChange}
-        />
+        <textarea rows="1" id="counter" value={this.state.keyPressCount} readOnly />
         <textarea
           ref={this.mainTextInput}
           autoFocus="autofocus"
@@ -134,14 +130,14 @@ export class MainTextInput extends Component {
           cols="50"
           value={this.state.value}
           onChange={this.handleChange}
-          onKeyDown={(e) => this.handleKeyPress(e)}
+          onKeyDown={this.handleKeyPress}
         />
         <textarea
-          ref={this.mainTextInput}
+          ref={this.keyDisplayInput}
           id="key-display"
-          rows="1"
+          rows="2"
           cols="50"
-          value={this.state.keyDisplay}
+          value={this.state.keyDisplay.join(',')}
         />
       </div>
     );
