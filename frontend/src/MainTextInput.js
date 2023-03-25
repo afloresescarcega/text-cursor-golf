@@ -18,6 +18,7 @@ export class MainTextInput extends Component {
       value: "The quick brown jumps fox over the lazy dog",
       keyPressCount: 0,
       goal: "The quick brown fox jumps over the lazy dog",
+      keyDisplay: []
     };
 
     this.handleChange = this.handleChange.bind(this);
@@ -55,16 +56,55 @@ export class MainTextInput extends Component {
       keyPressCount: prevState.keyPressCount + 1,
     }));
 
-    if (event.altKey) {
-      console.debug(`You pressed a alt key. ${event.key}`);
-    } else if (event.shiftKey) {
-      console.debug(`You pressed a shift key. ${event.key}`);
-    } else if (event.ctrlKey) {
-      console.debug(`You pressed a control key. ${event.key}`);
-    } else if (event.metaKey) {
-      console.debug(`You pressed a meta key. ${event.key}`);
-    } else {
-      console.debug(`You pressed a key. ${String.fromCharCode(event.charCode)}`);
+    switch (event.code) {
+      case "ArrowLeft":
+        this.state.keyDisplay.push("←");
+        console.log("Left arrow key pressed");
+        break;
+      case "ArrowRight":
+        this.state.keyDisplay.push("→");
+        console.log("Right arrow key pressed");
+        break;
+      case "ArrowUp":
+        this.state.keyDisplay.push("↑");
+        console.log("Up arrow key pressed");
+        break;
+      case "ArrowDown":
+        this.state.keyDisplay.push("↓");
+        console.log("Down arrow key pressed");
+        break;
+      case "MetaLeft":
+        this.state.keyDisplay.push("⌘");
+        console.log("Command/Windows key pressed");
+        break;
+      case "ControlLeft":
+        this.state.keyDisplay.push("Ctrl");
+        console.log("Control key pressed");
+        break;
+      case "AltLeft":
+        this.state.keyDisplay.push("Alt");
+        console.log("Option/Alt key pressed");
+        break;
+      case "ShiftLeft":
+        this.state.keyDisplay.push("Shift");
+        console.log("Shift key pressed");
+        break;
+      case "ShiftRight":
+        this.state.keyDisplay.push("Shift");
+        console.log("Shift key pressed");
+        break;
+      case "Space":
+        this.state.keyDisplay.push("⎵");
+        console.log("Space key pressed");
+        break;
+      case "Backspace":
+        this.state.keyDisplay.push("⌫");
+        console.log("Backspace key pressed");
+        break;
+      default:
+        this.state.keyDisplay.push(event.code.replace("Key", ""));
+        console.debug(`You pressed a key: ${event.code.replace("Key", "")}`);
+        break;
     }
   }
 
@@ -95,6 +135,13 @@ export class MainTextInput extends Component {
           value={this.state.value}
           onChange={this.handleChange}
           onKeyDown={(e) => this.handleKeyPress(e)}
+        />
+        <textarea
+          ref={this.mainTextInput}
+          id="key-display"
+          rows="1"
+          cols="50"
+          value={this.state.keyDisplay}
         />
       </div>
     );
