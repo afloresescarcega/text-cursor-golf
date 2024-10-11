@@ -1,6 +1,7 @@
 # Text Golf Challenge
 
 Text Golf Challenge is a web-based game inspired by Vimgolf, but without the need for Vim. It challenges users to edit text using as few keystrokes as possible.
+![image](https://github.com/user-attachments/assets/916408a0-8b43-4f54-9175-58a659347e30)
 
 ## Features
 
