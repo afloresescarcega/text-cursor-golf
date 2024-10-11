@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Golf Challenge</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            overflow-x: hidden;
+        }
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        #game-container {
+            position: relative;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        .text-box {
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 2px solid #007bff;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        #keystroke-count {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .not-complete {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .challenge-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .challenge-item {
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .challenge-item:hover {
+            background-color: #dee2e6;
+        }
+        .custom-challenge {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+        }
+        .custom-challenge input {
+            width: calc(50% - 5px);
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="game-container">
+        <h1>Text Golf Challenge</h1>
+        <div id="current-challenge">
+            <div class="text-box">
+                <strong>Given:</strong>
+                <p id="given-text"></p>
+            </div>
+            <div class="text-box">
+                <strong>Target:</strong>
+                <p id="target-text"></p>
+            </div>
+            <input type="text" id="user-input" placeholder="Start typing here...">
+            <div id="keystroke-count">Keystrokes: 0</div>
+            <div id="status" class="not-complete">Not quite there yet. Keep trying to match the target text.</div>
+        </div>
+        
+        <h2>Choose a Challenge</h2>
+        <div class="challenge-list" id="challenge-list">
+            <!-- Challenge items will be added here dynamically -->
+        </div>
+        
+        <div class="custom-challenge">
+            <h2>Create Your Own Challenge</h2>
+            <input type="text" id="custom-given" placeholder="Given text">
+            <input type="text" id="custom-target" placeholder="Target text">
+            <button id="create-custom">Create Challenge</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Game variables
+        let given = "The Foxx Lazy Jumped";
+        let target = "The Lazy Fox Jumped";
+        let keystrokes = 0;
+        let isComplete = false;
+
+        // Challenges
+        const challenges = [
+            { given: "The Foxx Lazy Jumped", target: "The Lazy Fox Jumped" },
+            { given: "Hello, Wrold!", target: "Hello, World!" },
+            { given: "The quixk brown fox", target: "The quick brown fox" },
+            { given: "JavaScript is awesome", target: "JavaScript is amazing" },
+            { given: "OpenAI ChatGPT", target: "OpenAI GPT-3" }
+        ];
+
+        // DOM elements
+        const givenTextEl = document.getElementById('given-text');
+        const targetTextEl = document.getElementById('target-text');
+        const userInputEl = document.getElementById('user-input');
+        const keystrokeCountEl = document.getElementById('keystroke-count');
+        const statusEl = document.getElementById('status');
+        const challengeListEl = document.getElementById('challenge-list');
+        const customGivenEl = document.getElementById('custom-given');
+        const customTargetEl = document.getElementById('custom-target');
+        const createCustomBtn = document.getElementById('create-custom');
+
+        // Initialize game
+        function initializeChallenge(givenText, targetText) {
+            given = givenText;
+            target = targetText;
+            givenTextEl.textContent = given;
+            targetTextEl.textContent = target;
+            userInputEl.value = given;
+            keystrokes = 0;
+            isComplete = false;
+            updateKeystrokeCount();
+            updateStatus();
+        }
+
+        // Populate challenge list
+        function populateChallengeList() {
+            challengeListEl.innerHTML = '';
+            challenges.forEach((challenge, index) => {
+                const challengeItem = document.createElement('div');
+                challengeItem.classList.add('challenge-item');
+                challengeItem.textContent = `Challenge ${index + 1}`;
+                challengeItem.addEventListener('click', () => initializeChallenge(challenge.given, challenge.target));
+                challengeListEl.appendChild(challengeItem);
+            });
+        }
+
+        // Initialize first challenge and populate list
+        initializeChallenge(challenges[0].given, challenges[0].target);
+        populateChallengeList();
+
+        // Custom challenge creation
+        createCustomBtn.addEventListener('click', () => {
+            const customGiven = customGivenEl.value.trim();
+            const customTarget = customTargetEl.value.trim();
+            if (customGiven && customTarget) {
+                initializeChallenge(customGiven, customTarget);
+                customGivenEl.value = '';
+                customTargetEl.value = '';
+            }
+        });
+
+        // WebGL background
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas') });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // Create mesh gradient
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                u_time: { value: 0 },
+                u_resolution: { value: new THREE.Vector2() },
+                u_mouse: { value: new THREE.Vector2() },
+                u_progress: { value: 0 },
+                u_complete: { value: 0 }
+            },
+            vertexShader: `
+                void main() {
+                    gl_Position = vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform vec2 u_resolution;
+                uniform float u_progress;
+                uniform float u_time;
+                uniform float u_complete;
+
+                vec3 colorA = vec3(0.8, 0.0, 0.0);  // Darker Red
+                vec3 colorB = vec3(1.0, 0.8, 0.0);  // Dark Yellow
+                vec3 colorC = vec3(0.0, 0.0, 0.8);  // Darker Blue
+                vec3 colorD = vec3(0.0, 0.8, 0.0);  // Darker Green
+
+                void main() {
+                    vec2 st = gl_FragCoord.xy / u_resolution.xy;
+                    
+                    // Create a more pronounced gradient
+                    float gradientX = pow(st.x, 2.0);
+                    float gradientY = pow(st.y, 2.0);
+                    
+                    vec3 color1 = mix(colorA, colorB, gradientX);
+                    vec3 color2 = mix(colorC, colorD, gradientX);
+                    vec3 finalColor = mix(color1, color2, gradientY);
+                    
+                    // Slightly adjust the color based on progress
+                    finalColor = mix(finalColor, vec3(1.0), u_progress * 0.2);
+
+                    // Add animation when complete
+                    if (u_complete > 0.5) {
+                        float wave = sin(st.x * 10.0 + u_time * 2.0) * 0.5 + 0.5;
+                        finalColor = mix(finalColor, vec3(1.0, 1.0, 0.5), wave * 0.3);
+                    }
+
+                    gl_FragColor = vec4(finalColor, 1.0);
+                }
+            `
+        });
+
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        camera.position.z = 1;
+
+        function animate(time) {
+            requestAnimationFrame(animate);
+            material.uniforms.u_time.value = time / 1000;
+            material.uniforms.u_resolution.value.set(window.innerWidth, window.innerHeight);
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Event listeners
+        userInputEl.addEventListener('input', handleInput);
+        userInputEl.addEventListener('keydown', handleKeyDown);
+
+        function handleInput(e) {
+            const currentText = e.target.value;
+            isComplete = currentText === target;
+            updateStatus();
+            material.uniforms.u_progress.value = e.target.selectionStart / target.length;
+            material.uniforms.u_complete.value = isComplete ? 1.0 : 0.0;
+        }
+
+        function handleKeyDown(e) {
+            if (!['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
+                keystrokes++;
+                updateKeystrokeCount();
+            }
+        }
+
+        function updateKeystrokeCount() {
+            keystrokeCountEl.textContent = `Keystrokes: ${keystrokes}`;
+        }
+
+        function updateStatus() {
+            if (isComplete) {
+                statusEl.textContent = `Success! You've completed the challenge in ${keystrokes} keystrokes.`;
+                statusEl.className = 'success';
+            } else {
+                statusEl.textContent = 'Not quite there yet. Keep trying to match the target text.';
+                statusEl.className = 'not-complete';
+            }
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', onWindowResize, false);
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            material.uniforms.u_resolution.value.set(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>
