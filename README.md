@@ -2,7 +2,7 @@
 
 Text Cursor Golf is a tiny browser game inspired by Vimgolf. Edit the given line until it matches the target, using as few keystrokes as possible.
 
-![image](https://github.com/user-attachments/assets/916408a0-8b43-4f54-9175-58a659347e30)
+![Text Cursor Golf game interface](screenshot.png)
 
 **[Play Text Cursor Golf](https://afloresescarcega.github.io/text-cursor-golf/)** · [View the source on GitHub](https://github.com/afloresescarcega/text-cursor-golf)
 
