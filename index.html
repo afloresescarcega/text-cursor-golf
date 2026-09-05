@@ -2,313 +2,656 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text Golf Challenge</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A tiny text-editing golf game. Match the target with as few keystrokes as possible.">
+    <meta name="theme-color" content="#08111f">
+    <meta property="og:title" content="Text Cursor Golf">
+    <meta property="og:description" content="Match the target text with as few keystrokes as possible.">
+    <meta property="og:type" content="website">
+    <title>Text Cursor Golf</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            overflow-x: hidden;
+        :root {
+            color-scheme: dark;
+            --ink: #eef5ff;
+            --muted: #9fb0c9;
+            --panel: rgba(11, 25, 45, 0.82);
+            --line: rgba(190, 214, 245, 0.17);
+            --accent: #74d5ff;
+            --success: #74e2af;
+            --danger: #ffb3a7;
+            --progress: 0;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
-        #canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-        }
-        #game-container {
+
+        * { box-sizing: border-box; }
+        html, body { min-height: 100%; }
+
+        body {
             position: relative;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            isolation: isolate;
+            margin: 0;
+            min-width: 320px;
+            overflow-x: hidden;
+            color: var(--ink);
+            background: #08111f;
         }
-        h1, h2 {
-            text-align: center;
-            color: #333;
+
+        body::before,
+        body::after {
+            position: fixed;
+            z-index: -2;
+            inset: -20%;
+            content: "";
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 18% 18%, rgba(45, 164, 255, 0.28), transparent 32%),
+                radial-gradient(circle at 84% 76%, rgba(112, 89, 255, 0.23), transparent 30%),
+                linear-gradient(135deg, #07101e 0%, #102d4b 52%, #10172d 100%);
+            animation: drift 18s ease-in-out infinite alternate;
         }
-        .text-box {
-            background-color: #f0f0f0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
+
+        body::after {
+            z-index: -1;
+            opacity: 0.58;
+            background:
+                radial-gradient(circle at calc(14% + var(--progress) * 42%) 76%, rgba(116, 226, 175, 0.22), transparent 23%),
+                radial-gradient(circle at 78% 12%, rgba(255, 188, 105, 0.16), transparent 24%);
+            animation-duration: 12s;
+        }
+
+        body.complete::after { opacity: 0.95; }
+
+        @keyframes drift {
+            from { transform: translate3d(-2%, -1%, 0) scale(1); }
+            to { transform: translate3d(2%, 1%, 0) scale(1.08); }
+        }
+
+        button, input { font: inherit; }
+        button { cursor: pointer; }
+
+        .game-shell {
+            width: min(920px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 42px 0 56px;
+        }
+
+        .hero {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 22px;
+        }
+
+        .eyebrow {
+            margin: 0 0 8px;
+            color: var(--accent);
+            font-size: 0.74rem;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        h1, h2, p { margin-top: 0; }
+
+        h1 {
+            max-width: 640px;
             margin-bottom: 10px;
+            font-size: clamp(2.1rem, 6vw, 4.3rem);
+            line-height: 0.98;
+            letter-spacing: -0.055em;
         }
-        input[type="text"] {
+
+        .lede {
+            max-width: 590px;
+            margin-bottom: 0;
+            color: var(--muted);
+            font-size: 1rem;
+            line-height: 1.55;
+        }
+
+        .badge {
+            flex: 0 0 auto;
+            padding: 9px 12px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.06);
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .card {
+            border: 1px solid var(--line);
+            border-radius: 22px;
+            background: rgba(11, 25, 45, 0.82);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+            backdrop-filter: blur(18px);
+        }
+
+        .challenge-card { padding: clamp(20px, 5vw, 34px); }
+
+        .challenge-heading {
+            display: flex;
+            align-items: start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .challenge-heading h2 {
+            margin-bottom: 0;
+            font-size: clamp(1.35rem, 3vw, 2rem);
+            letter-spacing: -0.03em;
+        }
+
+        .challenge-position {
+            padding: 7px 10px;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .text-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .text-box {
+            min-width: 0;
+            padding: 15px;
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            background: rgba(255, 255, 255, 0.045);
+        }
+
+        .text-box strong {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 0.72rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .text-box p {
+            min-height: 1.5em;
+            margin: 0;
+            overflow-wrap: anywhere;
+            color: #ffffff;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            font-size: 0.96rem;
+            line-height: 1.45;
+        }
+
+        #user-input {
             width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border: 2px solid #007bff;
-            border-radius: 5px;
-            font-size: 16px;
+            min-height: 58px;
+            padding: 15px 16px;
+            border: 2px solid rgba(116, 213, 255, 0.58);
+            border-radius: 13px;
+            outline: none;
+            color: #ffffff;
+            background: rgba(3, 11, 23, 0.72);
+            box-shadow: 0 0 0 0 rgba(116, 213, 255, 0);
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            font-size: 1rem;
+            transition: border-color 160ms ease, box-shadow 160ms ease;
         }
-        #keystroke-count {
-            text-align: right;
-            font-weight: bold;
-            margin-top: 10px;
+
+        #user-input::placeholder { color: #72849d; }
+
+        #user-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(116, 213, 255, 0.15);
         }
-        #status {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 5px;
-            text-align: center;
-            font-weight: bold;
+
+        .input-hint {
+            margin: 9px 0 0;
+            color: var(--muted);
+            font-size: 0.8rem;
         }
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .not-complete {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .challenge-list {
+
+        .scoreboard {
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-around;
-            margin-top: 20px;
+            gap: 10px;
+            margin-top: 18px;
         }
+
+        .score-item {
+            display: flex;
+            align-items: baseline;
+            gap: 7px;
+            min-width: 112px;
+            padding: 9px 12px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.045);
+        }
+
+        .score-item strong {
+            color: #ffffff;
+            font-size: 1.05rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .score-item span {
+            color: var(--muted);
+            font-size: 0.78rem;
+        }
+
+        .status {
+            margin: 18px 0 0;
+            padding: 12px 14px;
+            border: 1px solid rgba(255, 179, 167, 0.22);
+            border-radius: 11px;
+            color: var(--danger);
+            background: rgba(129, 47, 56, 0.22);
+            font-size: 0.9rem;
+        }
+
+        .status.success {
+            border-color: rgba(116, 226, 175, 0.3);
+            color: var(--success);
+            background: rgba(28, 116, 81, 0.22);
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 16px;
+            margin: 38px 0 14px;
+        }
+
+        .section-heading h2 { margin-bottom: 0; font-size: 1.15rem; }
+
+        .section-heading p {
+            margin-bottom: 0;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .challenge-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 9px;
+        }
+
         .challenge-item {
-            background-color: #e9ecef;
-            border: 1px solid #ced4da;
-            border-radius: 5px;
-            padding: 10px;
-            margin: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            color: var(--ink);
+            text-align: left;
+            background: rgba(255, 255, 255, 0.05);
+            transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
         }
-        .challenge-item:hover {
-            background-color: #dee2e6;
+
+        .challenge-item:hover,
+        .challenge-item:focus-visible,
+        .challenge-item.active {
+            border-color: rgba(116, 213, 255, 0.65);
+            outline: none;
+            background: rgba(116, 213, 255, 0.12);
+            transform: translateY(-1px);
         }
-        .custom-challenge {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #e9ecef;
-            border-radius: 5px;
+
+        .challenge-number {
+            color: var(--accent);
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 0.76rem;
+            font-weight: 700;
         }
-        .custom-challenge input {
-            width: calc(50% - 5px);
-            margin-right: 5px;
+
+        .challenge-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .custom-challenge { margin-top: 32px; padding: 22px; }
+
+        .custom-challenge h2 { margin-bottom: 7px; font-size: 1.12rem; }
+
+        .custom-challenge p {
+            margin-bottom: 15px;
+            color: var(--muted);
+            font-size: 0.84rem;
+        }
+
+        .custom-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 9px;
+        }
+
+        .custom-fields input {
+            min-width: 0;
+            padding: 11px 12px;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            outline: none;
+            color: var(--ink);
+            background: rgba(3, 11, 23, 0.5);
+        }
+
+        .custom-fields input:focus { border-color: var(--accent); }
+
+        .primary-button {
+            padding: 11px 14px;
+            border: 0;
+            border-radius: 9px;
+            color: #07111d;
+            background: var(--accent);
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .primary-button:hover { background: #a0e7ff; }
+
+        .footer-note {
+            margin: 24px 0 0;
+            color: var(--muted);
+            font-size: 0.78rem;
+            text-align: center;
+        }
+
+        @media (max-width: 680px) {
+            .game-shell { width: min(100% - 22px, 920px); padding-top: 24px; }
+            .hero { display: block; }
+            .badge { display: inline-block; margin-top: 16px; }
+            .text-grid, .custom-fields { grid-template-columns: 1fr; }
+            .primary-button { width: 100%; }
+            .challenge-card { border-radius: 17px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
         }
     </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
-    <div id="game-container">
-        <h1>Text Golf Challenge</h1>
-        <div id="current-challenge">
-            <div class="text-box">
-                <strong>Given:</strong>
-                <p id="given-text"></p>
+    <main class="game-shell">
+        <header class="hero">
+            <div>
+                <p class="eyebrow">Text editing, distilled</p>
+                <h1>Text Cursor Golf</h1>
+                <p class="lede">Match the target with as few keystrokes as possible. Choose a line, work the cursor, and chase a new best.</p>
             </div>
-            <div class="text-box">
-                <strong>Target:</strong>
-                <p id="target-text"></p>
-            </div>
-            <input type="text" id="user-input" placeholder="Start typing here...">
-            <div id="keystroke-count">Keystrokes: 0</div>
-            <div id="status" class="not-complete">Not quite there yet. Keep trying to match the target text.</div>
-        </div>
-        
-        <h2>Choose a Challenge</h2>
-        <div class="challenge-list" id="challenge-list">
-            <!-- Challenge items will be added here dynamically -->
-        </div>
-        
-        <div class="custom-challenge">
-            <h2>Create Your Own Challenge</h2>
-            <input type="text" id="custom-given" placeholder="Given text">
-            <input type="text" id="custom-target" placeholder="Target text">
-            <button id="create-custom">Create Challenge</button>
-        </div>
-    </div>
+            <div class="badge">Native HTML · CSS · JS</div>
+        </header>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <section class="card challenge-card" aria-labelledby="challenge-title">
+            <div class="challenge-heading">
+                <div>
+                    <p class="eyebrow">Current challenge</p>
+                    <h2 id="challenge-title">Reorder the words</h2>
+                </div>
+                <div class="challenge-position" id="challenge-position" aria-label="Challenge position">01 / 28</div>
+            </div>
+
+            <div class="text-grid">
+                <div class="text-box">
+                    <strong>Given</strong>
+                    <p id="given-text"></p>
+                </div>
+                <div class="text-box">
+                    <strong>Target</strong>
+                    <p id="target-text"></p>
+                </div>
+            </div>
+
+            <label class="eyebrow" for="user-input">Your edit</label>
+            <input type="text" id="user-input" autocomplete="off" spellcheck="false" placeholder="Start typing here..." aria-describedby="input-hint status">
+            <p class="input-hint" id="input-hint">Tip: modifier keys and cursor moves count too. Lower score wins.</p>
+
+            <div class="scoreboard" aria-label="Scoreboard">
+                <div class="score-item"><strong id="keystroke-count">0</strong><span>score</span></div>
+                <div class="score-item"><strong id="best-count">—</strong><span>best</span></div>
+                <div class="score-item"><strong id="solved-count">0 / 28</strong><span>solved</span></div>
+            </div>
+            <p id="status" class="status" aria-live="polite">Not quite there yet. Keep trying to match the target text.</p>
+        </section>
+
+        <div class="section-heading">
+            <h2>Choose a challenge</h2>
+            <p>Built-ins save your best score locally.</p>
+        </div>
+        <section class="challenge-list" id="challenge-list" aria-label="Built-in challenges"></section>
+
+        <section class="card custom-challenge" aria-labelledby="custom-title">
+            <h2 id="custom-title">Create your own</h2>
+            <p>Make a private challenge. Custom scores are not saved.</p>
+            <div class="custom-fields">
+                <input type="text" id="custom-given" placeholder="Given text" aria-label="Custom given text">
+                <input type="text" id="custom-target" placeholder="Target text" aria-label="Custom target text">
+                <button class="primary-button" id="create-custom" type="button">Start custom</button>
+            </div>
+        </section>
+
+        <p class="footer-note">No account, build step, or library required.</p>
+    </main>
+
     <script>
-        // Game variables
-        let given = "The Foxx Lazy Jumped";
-        let target = "The Lazy Fox Jumped";
+        const BEST_SCORES_KEY = "text-cursor-golf-best-scores";
+
+        let given = "";
+        let target = "";
         let keystrokes = 0;
         let isComplete = false;
+        let isNewBest = false;
+        let activeChallengeId = null;
+        let activeChallengeIndex = 0;
+        let bestScores = loadBestScores();
 
-        // Challenges
+        // The first group keeps the original challenge library; the final three are new built-ins.
         const challenges = [
-            { given: "The Foxx Lazy Jumped", target: "The Lazy Fox Jumped" },
-            { given: "Hello, Wrold!", target: "Hello, World!" },
-            { given: "The quixk brown fox", target: "The quick brown fox" },
-            { given: "JavaScript is awesome", target: "JavaScript is amazing" },
-            { given: "OpenAI ChatGPT", target: "OpenAI GPT-3" }
+            { id: "reorder-words", title: "Reorder the words", given: "The Foxx Lazy Jumped", target: "The Lazy Fox Jumped" },
+            { id: "fix-world", title: "Fix a typo", given: "Hello, Wrold!", target: "Hello, World!" },
+            { id: "fix-quick", title: "Fix a typo", given: "The quixk brown fox", target: "The quick brown fox" },
+            { id: "replace-word", title: "Replace a word", given: "JavaScript is awesome", target: "JavaScript is amazing" },
+            { id: "replace-product", title: "Replace a phrase", given: "OpenAI ChatGPT", target: "OpenAI GPT-3" },
+            { id: "move-quick", title: "Move a word", given: "the quick brown fox jumps over", target: "the brown fox jumps over quick" },
+            { id: "move-pair", title: "Move two words", given: "one two three four five six", target: "one four five six two three" },
+            { id: "swap-pair", title: "Swap a pair", given: "alpha beta gamma delta epsilon", target: "alpha gamma beta delta epsilon" },
+            { id: "remove-middle", title: "Remove middle words", given: "remove the middle words please", target: "remove please" },
+            { id: "keep-ends", title: "Keep the ends", given: "keep first and last", target: "keep last" },
+            { id: "remove-brackets", title: "Remove a section", given: "a]b]c]d]e]f", target: "a]d]e]f" },
+            { id: "remove-duplicate", title: "Remove a duplicate", given: "delete the extra extra word", target: "delete the extra word" },
+            { id: "trim-sentence", title: "Trim a sentence", given: "too many words in this sentence here", target: "too many words here" },
+            { id: "keep-suffix", title: "Keep the suffix", given: "prefix_unnecessary_content_value", target: "value" },
+            { id: "move-front", title: "Move to the front", given: "move this to the front end", target: "end move this to the front" },
+            { id: "move-finish", title: "Move the finish", given: "start middle finish", target: "finish start middle" },
+            { id: "keep-beginning", title: "Keep the beginning", given: "keep only the beginning of this long text", target: "keep only the beginning" },
+            { id: "remove-prefix", title: "Remove the prefix", given: "unwanted prefix actual content here", target: "actual content here" },
+            { id: "keep-end", title: "Keep the end", given: "all of this should go except end", target: "end" },
+            { id: "keep-start", title: "Keep the start", given: "save the start but not this part", target: "save the start" },
+            { id: "replace-animal", title: "Replace a word", given: "the cat sat on the mat", target: "the dog sat on the mat" },
+            { id: "replace-function", title: "Replace a function", given: "function calculateTotal amount", target: "function computeSum amount" },
+            { id: "replace-color", title: "Replace a color", given: "red green blue yellow purple", target: "red orange blue yellow purple" },
+            { id: "rotate-words", title: "Rotate the words", given: "abcdef ghijkl mnopqr stuvwx", target: "stuvwx abcdef ghijkl mnopqr" },
+            { id: "remove-list", title: "Trim the list", given: "error warning info debug trace verbose", target: "error info debug verbose" },
+
+            // Three additional built-in challenges.
+            { id: "swap-word", title: "Swap one word", given: "the red bike is fast", target: "the blue bike is fast" },
+            { id: "trim-tail", title: "Trim the tail", given: "keep only the useful words please", target: "keep only the useful words" },
+            { id: "move-last", title: "Move the last word", given: "practice makes progress today", target: "today practice makes progress" }
         ];
 
-        // DOM elements
-        const givenTextEl = document.getElementById('given-text');
-        const targetTextEl = document.getElementById('target-text');
-        const userInputEl = document.getElementById('user-input');
-        const keystrokeCountEl = document.getElementById('keystroke-count');
-        const statusEl = document.getElementById('status');
-        const challengeListEl = document.getElementById('challenge-list');
-        const customGivenEl = document.getElementById('custom-given');
-        const customTargetEl = document.getElementById('custom-target');
-        const createCustomBtn = document.getElementById('create-custom');
+        const givenTextEl = document.getElementById("given-text");
+        const targetTextEl = document.getElementById("target-text");
+        const challengeTitleEl = document.getElementById("challenge-title");
+        const challengePositionEl = document.getElementById("challenge-position");
+        const userInputEl = document.getElementById("user-input");
+        const keystrokeCountEl = document.getElementById("keystroke-count");
+        const bestCountEl = document.getElementById("best-count");
+        const solvedCountEl = document.getElementById("solved-count");
+        const statusEl = document.getElementById("status");
+        const challengeListEl = document.getElementById("challenge-list");
+        const customGivenEl = document.getElementById("custom-given");
+        const customTargetEl = document.getElementById("custom-target");
+        const createCustomBtn = document.getElementById("create-custom");
 
-        // Initialize game
-        function initializeChallenge(givenText, targetText) {
-            given = givenText;
-            target = targetText;
+        function loadBestScores() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(BEST_SCORES_KEY));
+                return saved && typeof saved === "object" ? saved : {};
+            } catch (error) {
+                return {};
+            }
+        }
+
+        function saveBestScores() {
+            try {
+                localStorage.setItem(BEST_SCORES_KEY, JSON.stringify(bestScores));
+            } catch (error) {
+                // Private browsing or a disabled storage API should not stop the game.
+            }
+        }
+
+        function solvedCount() {
+            return challenges.reduce((count, challenge) => {
+                return count + (Number.isFinite(bestScores[challenge.id]) ? 1 : 0);
+            }, 0);
+        }
+
+        function initializeChallenge(challenge, index = null) {
+            given = challenge.given;
+            target = challenge.target;
+            activeChallengeId = challenge.id || null;
+            activeChallengeIndex = Number.isInteger(index) ? index : -1;
+            challengeTitleEl.textContent = challenge.title || "Custom challenge";
+            challengePositionEl.textContent = activeChallengeIndex >= 0
+                ? `${String(activeChallengeIndex + 1).padStart(2, "0")} / ${challenges.length}`
+                : "Custom";
             givenTextEl.textContent = given;
             targetTextEl.textContent = target;
             userInputEl.value = given;
             keystrokes = 0;
             isComplete = false;
-            updateKeystrokeCount();
+            isNewBest = false;
+            document.body.classList.remove("complete");
+            updateScoreboard();
             updateStatus();
+            updateProgress();
+            updateChallengeList();
         }
 
-        // Populate challenge list
         function populateChallengeList() {
-            challengeListEl.innerHTML = '';
+            challengeListEl.innerHTML = "";
             challenges.forEach((challenge, index) => {
-                const challengeItem = document.createElement('div');
-                challengeItem.classList.add('challenge-item');
-                challengeItem.textContent = `Challenge ${index + 1}`;
-                challengeItem.addEventListener('click', () => initializeChallenge(challenge.given, challenge.target));
+                const challengeItem = document.createElement("button");
+                challengeItem.type = "button";
+                challengeItem.className = "challenge-item";
+                challengeItem.dataset.challengeId = challenge.id;
+                challengeItem.setAttribute("aria-label", `Challenge ${index + 1}: ${challenge.title}`);
+                challengeItem.innerHTML = `<span class="challenge-number">${String(index + 1).padStart(2, "0")}</span><span class="challenge-name"></span>`;
+                challengeItem.querySelector(".challenge-name").textContent = challenge.title;
+                challengeItem.addEventListener("click", () => initializeChallenge(challenge, index));
                 challengeListEl.appendChild(challengeItem);
+            });
+            updateChallengeList();
+        }
+
+        function updateChallengeList() {
+            challengeListEl.querySelectorAll(".challenge-item").forEach((item) => {
+                const isActive = item.dataset.challengeId === activeChallengeId;
+                item.classList.toggle("active", isActive);
+                item.setAttribute("aria-pressed", String(isActive));
             });
         }
 
-        // Initialize first challenge and populate list
-        initializeChallenge(challenges[0].given, challenges[0].target);
-        populateChallengeList();
+        function updateScoreboard() {
+            keystrokeCountEl.textContent = String(keystrokes);
+            bestCountEl.textContent = activeChallengeId && Number.isFinite(bestScores[activeChallengeId])
+                ? String(bestScores[activeChallengeId])
+                : "—";
+            solvedCountEl.textContent = `${solvedCount()} / ${challenges.length}`;
+        }
 
-        // Custom challenge creation
-        createCustomBtn.addEventListener('click', () => {
-            const customGiven = customGivenEl.value.trim();
-            const customTarget = customTargetEl.value.trim();
-            if (customGiven && customTarget) {
-                initializeChallenge(customGiven, customTarget);
-                customGivenEl.value = '';
-                customTargetEl.value = '';
+        function recordBestScore() {
+            if (!activeChallengeId) return false;
+            const previousBest = bestScores[activeChallengeId];
+            if (!Number.isFinite(previousBest) || keystrokes < previousBest) {
+                bestScores[activeChallengeId] = keystrokes;
+                saveBestScores();
+                return true;
             }
-        });
-
-        // WebGL background
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas') });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-
-        // Create mesh gradient
-        const geometry = new THREE.PlaneGeometry(2, 2);
-        const material = new THREE.ShaderMaterial({
-            uniforms: {
-                u_time: { value: 0 },
-                u_resolution: { value: new THREE.Vector2() },
-                u_mouse: { value: new THREE.Vector2() },
-                u_progress: { value: 0 },
-                u_complete: { value: 0 }
-            },
-            vertexShader: `
-                void main() {
-                    gl_Position = vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                uniform vec2 u_resolution;
-                uniform float u_progress;
-                uniform float u_time;
-                uniform float u_complete;
-
-                vec3 colorA = vec3(0.8, 0.0, 0.0);  // Darker Red
-                vec3 colorB = vec3(1.0, 0.8, 0.0);  // Dark Yellow
-                vec3 colorC = vec3(0.0, 0.0, 0.8);  // Darker Blue
-                vec3 colorD = vec3(0.0, 0.8, 0.0);  // Darker Green
-
-                void main() {
-                    vec2 st = gl_FragCoord.xy / u_resolution.xy;
-                    
-                    // Create a more pronounced gradient
-                    float gradientX = pow(st.x, 2.0);
-                    float gradientY = pow(st.y, 2.0);
-                    
-                    vec3 color1 = mix(colorA, colorB, gradientX);
-                    vec3 color2 = mix(colorC, colorD, gradientX);
-                    vec3 finalColor = mix(color1, color2, gradientY);
-                    
-                    // Slightly adjust the color based on progress
-                    finalColor = mix(finalColor, vec3(1.0), u_progress * 0.2);
-
-                    // Add animation when complete
-                    if (u_complete > 0.5) {
-                        float wave = sin(st.x * 10.0 + u_time * 2.0) * 0.5 + 0.5;
-                        finalColor = mix(finalColor, vec3(1.0, 1.0, 0.5), wave * 0.3);
-                    }
-
-                    gl_FragColor = vec4(finalColor, 1.0);
-                }
-            `
-        });
-
-        const mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-
-        camera.position.z = 1;
-
-        function animate(time) {
-            requestAnimationFrame(animate);
-            material.uniforms.u_time.value = time / 1000;
-            material.uniforms.u_resolution.value.set(window.innerWidth, window.innerHeight);
-            renderer.render(scene, camera);
-        }
-
-        animate();
-
-        // Event listeners
-        userInputEl.addEventListener('input', handleInput);
-        userInputEl.addEventListener('keydown', handleKeyDown);
-
-        function handleInput(e) {
-            const currentText = e.target.value;
-            isComplete = currentText === target;
-            updateStatus();
-            material.uniforms.u_progress.value = e.target.selectionStart / target.length;
-            material.uniforms.u_complete.value = isComplete ? 1.0 : 0.0;
-        }
-
-        function handleKeyDown(e) {
-            if (!['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
-                keystrokes++;
-                updateKeystrokeCount();
-            }
-        }
-
-        function updateKeystrokeCount() {
-            keystrokeCountEl.textContent = `Keystrokes: ${keystrokes}`;
+            return false;
         }
 
         function updateStatus() {
             if (isComplete) {
-                statusEl.textContent = `Success! You've completed the challenge in ${keystrokes} keystrokes.`;
-                statusEl.className = 'success';
+                statusEl.textContent = isNewBest
+                    ? `Success! ${keystrokes} keystrokes — new best score.`
+                    : `Success! You matched the target in ${keystrokes} keystrokes.`;
+                statusEl.className = "status success";
             } else {
-                statusEl.textContent = 'Not quite there yet. Keep trying to match the target text.';
-                statusEl.className = 'not-complete';
+                statusEl.textContent = "Not quite there yet. Keep trying to match the target text.";
+                statusEl.className = "status";
             }
         }
 
-        // Handle window resize
-        window.addEventListener('resize', onWindowResize, false);
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            material.uniforms.u_resolution.value.set(window.innerWidth, window.innerHeight);
+        function updateProgress() {
+            const cursorPosition = Number.isFinite(userInputEl.selectionStart) ? userInputEl.selectionStart : 0;
+            const progress = Math.min(1, Math.max(0, cursorPosition / Math.max(target.length, 1)));
+            document.documentElement.style.setProperty("--progress", progress.toFixed(2));
         }
+
+        function handleInput(event) {
+            const wasComplete = isComplete;
+            isComplete = event.target.value === target;
+            isNewBest = isComplete && !wasComplete ? recordBestScore() : false;
+            updateScoreboard();
+            updateStatus();
+            document.body.classList.toggle("complete", isComplete);
+            updateProgress();
+        }
+
+        function handleKeyDown(event) {
+            if (!["Shift", "Control", "Alt", "Meta"].includes(event.key)) {
+                keystrokes += 1;
+                updateScoreboard();
+            }
+        }
+
+        initializeChallenge(challenges[0], 0);
+        populateChallengeList();
+
+        createCustomBtn.addEventListener("click", () => {
+            const customGiven = customGivenEl.value.trim();
+            const customTarget = customTargetEl.value.trim();
+            if (!customGiven || !customTarget) return;
+            initializeChallenge({ given: customGiven, target: customTarget, title: "Custom challenge" });
+            customGivenEl.value = "";
+            customTargetEl.value = "";
+            userInputEl.focus();
+        });
+
+        userInputEl.addEventListener("input", handleInput);
+        userInputEl.addEventListener("keydown", handleKeyDown);
+        userInputEl.addEventListener("keyup", updateProgress);
+        userInputEl.addEventListener("select", updateProgress);
+
+        // Keep cursor movement keyboard-only so the score reflects deliberate editing.
+        userInputEl.addEventListener("mousedown", (event) => {
+            event.preventDefault();
+            if (document.activeElement !== userInputEl) {
+                userInputEl.focus();
+                userInputEl.setSelectionRange(0, 0);
+            }
+        });
     </script>
 </body>
 </html>
