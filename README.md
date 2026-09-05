@@ -19,7 +19,7 @@ Text Cursor Golf is a tiny browser game inspired by Vimgolf. Edit the given line
 
 1. Choose a built-in challenge.
 2. Edit the text in the input until it exactly matches the target.
-3. Use the keyboard to navigate and edit. Modifier keys and cursor moves count too.
+3. Use the keyboard to navigate and edit. Cursor moves and shortcut actions count; modifier-only presses do not.
 4. Finish with the lowest score you can. Your best built-in scores are saved on this device.
 
 ## Run locally

@@ -414,7 +414,7 @@
 
             <label class="eyebrow" for="user-input">Your edit</label>
             <input type="text" id="user-input" autocomplete="off" spellcheck="false" placeholder="Start typing here..." aria-describedby="input-hint status">
-            <p class="input-hint" id="input-hint">Tip: modifier keys and cursor moves count too. Lower score wins.</p>
+            <p class="input-hint" id="input-hint">Tip: cursor moves and shortcut actions count; modifier-only presses do not. Lower score wins.</p>
 
             <div class="scoreboard" aria-label="Scoreboard">
                 <div class="score-item"><strong id="keystroke-count">0</strong><span>score</span></div>
@@ -539,8 +539,9 @@
             targetTextEl.textContent = target;
             userInputEl.value = given;
             keystrokes = 0;
-            isComplete = false;
+            isComplete = given === target;
             isNewBest = false;
+            if (isComplete) isNewBest = recordBestScore();
             document.body.classList.remove("complete");
             updateScoreboard();
             updateStatus();
@@ -620,6 +621,8 @@
         }
 
         function handleKeyDown(event) {
+            const isPasteShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "v";
+            if (isPasteShortcut) return;
             if (!["Shift", "Control", "Alt", "Meta"].includes(event.key)) {
                 keystrokes += 1;
                 updateScoreboard();
@@ -630,9 +633,9 @@
         populateChallengeList();
 
         createCustomBtn.addEventListener("click", () => {
-            const customGiven = customGivenEl.value.trim();
-            const customTarget = customTargetEl.value.trim();
-            if (!customGiven || !customTarget) return;
+            const customGiven = customGivenEl.value;
+            const customTarget = customTargetEl.value;
+            if (!customGiven.trim() || !customTarget.trim()) return;
             initializeChallenge({ given: customGiven, target: customTarget, title: "Custom challenge" });
             customGivenEl.value = "";
             customTargetEl.value = "";
@@ -641,6 +644,10 @@
 
         userInputEl.addEventListener("input", handleInput);
         userInputEl.addEventListener("keydown", handleKeyDown);
+        userInputEl.addEventListener("paste", () => {
+            keystrokes += 1;
+            updateScoreboard();
+        });
         userInputEl.addEventListener("keyup", updateProgress);
         userInputEl.addEventListener("select", updateProgress);
 
