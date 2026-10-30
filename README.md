@@ -45,3 +45,4 @@ Contributions are welcome. Open an issue or submit a pull request with a focused
 ## License
 
 This project is open source and available under the [MIT License](LICENSE).
+
